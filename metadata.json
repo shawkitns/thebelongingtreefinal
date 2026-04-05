@@ -1,0 +1,7 @@
+{
+  "name": "The Belonging Tree",
+  "description": "An interactive installation and data visualization that reveals belonging and identity through movement.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
