@@ -9,18 +9,49 @@ const DEFAULT_LEAF = 'M0,-13 C5,-13 11,-7 11,0 C11,7 0,13 0,13 C0,13 -11,7 -11,0
 const BASE_OPACITY = 0.9;
 const FADE_FACTOR = 0.82;
 
+// For multipolygon countries, pathGen.centroid() averages all parts (incl. Alaska, islands)
+// and lands off the main landmass. Override with a representative lon/lat instead.
+const CENTROID_OVERRIDE: Record<string, [number, number]> = {
+  "USA":              [-98,  38],
+  "Russia":           [ 60,  58],
+  "Canada":           [-95,  60],
+  "Australia":        [134, -25],
+  "Indonesia":        [118,  -2],
+  "Malaysia":         [109,   3],
+  "Philippines":      [122,  12],
+  "New Zealand":      [172, -42],
+  "UK":               [ -2,  54],
+  "France":           [  2,  47],
+  "Norway":           [ 15,  65],
+  "Denmark":          [ 10,  56],
+  "Netherlands":      [  5,  52],
+  "Portugal":         [ -8,  39],
+  "Kiribati":         [-157,  2],
+  "Micronesia":       [158,   7],
+  "Marshall Islands": [168,   7],
+  "Tuvalu":           [179,  -8],
+  "Palau":            [134,   7],
+  "Trinidad and Tobago": [-61, 10],
+  "Bahamas":          [-77,  24],
+  "Trinidad and Tobago": [-61, 11],
+};
+
+// Maps our display names → exact GeoJSON property names
 const GEO_NAME_MAP: Record<string, string> = {
-  "USA": "USA",
-  "UK": "England",
-  "UAE": "United Arab Emirates",
-  "South Korea": "South Korea",
-  "North Korea": "Dem. Rep. Korea",
-  "Dominican Republic": "Dominican Rep.",
-  "Papua New Guinea": "Papua New Guinea",
-  "El Salvador": "El Salvador",
-  "Costa Rica": "Costa Rica",
-  "Solomon Islands": "Solomon Is.",
-  "Sri Lanka": "Sri Lanka",
+  "UK":                        "England",
+  "UAE":                       "United Arab Emirates",
+  "DR Congo":                  "Democratic Republic of the Congo",
+  "Republic of Congo":         "Republic of the Congo",
+  "Tanzania":                  "United Republic of Tanzania",
+  "Ivory Coast":               "Ivory Coast",
+  "Guinea-Bissau":             "Guinea Bissau",
+  "North Macedonia":           "Macedonia",
+  "Eswatini":                  "Swaziland",
+  "Timor-Leste":               "East Timor",
+  "Serbia":                    "Republic of Serbia",
+  "Bahamas":                   "The Bahamas",
+  "Palestine":                 "West Bank",
+  "Dominican Republic":        "Dominican Republic",
 };
 
 type PathEntry = {
@@ -111,13 +142,14 @@ export default function Viz() {
     if (points.length < 1) return;
 
     const color = p.color || '#5ecf3e';
-    const scale = 1;
+    const scale = 1.4;
+    const stampShape = p.leafPath || DEFAULT_LEAF;
     const group = pathsLayer.append('g').attr('data-path-id', p.id);
 
     if (points.length > 1) {
       const lineGen = d3.line<[number, number]>()
         .x(d => d[0]).y(d => d[1])
-        .curve(d3.curveBundle.beta(0.8));
+        .curve(d3.curveCatmullRom.alpha(0.5));
 
       const pathString = lineGen(points);
       if (pathString) {
@@ -137,7 +169,7 @@ export default function Viz() {
           .data(leafPoints)
           .join('path')
           .attr('class', 'path-leaf')
-          .attr('d', DEFAULT_LEAF)
+          .attr('d', stampShape)
           .attr('transform', d => `translate(${d.x},${d.y}) scale(${scale})`)
           .attr('fill', color)
           .attr('stroke', 'none')
@@ -198,16 +230,14 @@ export default function Viz() {
       if (points.length < 1) return;
 
       const color = p.color || '#5ecf3e';
-      const leafScale = 1;
+      const leafScale = 1.4;
+      const stampShape = p.leafPath || DEFAULT_LEAF;
       const W = svgEl.clientWidth;
       const H = svgEl.clientHeight;
 
       fadeExistingPaths(p.id);
 
-      // Temporarily remove the expensive watercolor filter so the zoom runs on the GPU compositor.
-      // The filter forces CPU rasterization every frame — removing it during motion is imperceptible.
       const svgSel = d3.select(svgEl);
-      svgSel.select('.country-group').attr('filter', null);
       svgSel.select('.tree-trunk').attr('filter', null);
 
       // 1 — Zoom in to the bounding box of all selected countries
@@ -219,7 +249,7 @@ export default function Viz() {
         // Single country — just place a leaf and pulse
         group.append('path')
           .attr('class', 'path-leaf')
-          .attr('d', DEFAULT_LEAF)
+          .attr('d', stampShape)
           .attr('transform', `translate(${points[0][0]},${points[0][1]}) scale(${leafScale})`)
           .attr('fill', color).attr('stroke', 'none')
           .style('opacity', 0)
@@ -228,7 +258,7 @@ export default function Viz() {
         // 2 — Build curved path and draw leaves one by one
         const lineGen = d3.line<[number, number]>()
           .x(d => d[0]).y(d => d[1])
-          .curve(d3.curveBundle.beta(0.8));
+          .curve(d3.curveCatmullRom.alpha(0.5));
 
         const pathString = lineGen(points);
         if (pathString) {
@@ -246,7 +276,7 @@ export default function Viz() {
             const pt = tempPath.getPointAtLength((i / numLeaves) * totalLength);
             group.append('path')
               .attr('class', 'path-leaf')
-              .attr('d', DEFAULT_LEAF)
+              .attr('d', stampShape)
               .attr('transform', `translate(${pt.x},${pt.y}) scale(${leafScale})`)
               .attr('fill', color)
               .attr('stroke', 'none')
@@ -302,8 +332,6 @@ export default function Viz() {
       // 6 — Zoom back out
       await zoomOut(zoomContainer);
 
-      // Restore watercolor filter now that motion is done
-      svgSel.select('.country-group').attr('filter', 'url(#watercolor)');
       svgSel.select('.tree-trunk').attr('filter', 'url(#watercolor)');
     } finally {
       animatingRef.current = false;
@@ -337,9 +365,9 @@ export default function Viz() {
     const skyGrad = defs.append('linearGradient')
       .attr('id', skyId)
       .attr('x1', '0').attr('y1', '0').attr('x2', '0').attr('y2', '1');
-    skyGrad.append('stop').attr('offset', '0%').attr('stop-color', '#060d12');
-    skyGrad.append('stop').attr('offset', '60%').attr('stop-color', '#0a1a1f');
-    skyGrad.append('stop').attr('offset', '100%').attr('stop-color', '#0f2318');
+    skyGrad.append('stop').attr('offset', '0%').attr('stop-color', '#04090e');
+    skyGrad.append('stop').attr('offset', '65%').attr('stop-color', '#071218');
+    skyGrad.append('stop').attr('offset', '100%').attr('stop-color', '#0c1f10');
 
     svg.append('rect')
       .attr('class', 'map-bg')
@@ -372,21 +400,15 @@ export default function Viz() {
     // Country paths — dark painterly variation
     zoomContainer.append('g')
       .attr('class', 'country-group')
-      .attr('filter', 'url(#watercolor)')
       .selectAll<SVGPathElement, any>('.country')
       .data(worldData.features.filter((f: any) => f.properties.name !== 'Antarctica'))
       .join('path')
       .attr('class', 'country')
       .attr('d', pathGen as any)
-      .attr('fill', (_: any, i: number) => {
-        const h = 100 + (i % 9) * 6;
-        const s = 18 + (i % 4) * 4;
-        const l = 12 + (i % 6) * 1.8;
-        return `hsl(${h},${s}%,${l}%)`;
-      })
-      .attr('stroke', (_: any, i: number) => `hsl(${100 + (i % 9) * 6},22%,28%)`)
-      .attr('stroke-width', 0.4)
-      .style('opacity', 0.92);
+      .attr('fill', 'none')
+      .attr('stroke', '#7a4520')
+      .attr('stroke-width', 0.7)
+      .style('opacity', 1);
 
     // Tree stump + grass — drawn outside the zoomContainer so they don't scale/shift
     const cx = width / 2;
@@ -407,7 +429,7 @@ export default function Viz() {
         C ${cx + stumpW - 10},${grassY - 20} ${cx + stumpNarrow + 4},${stumpTop + 20} ${cx + stumpNarrow},${stumpTop}
         Z
       `)
-      .attr('fill', '#1a0f06');
+      .attr('fill', '#6b3a18');
 
     // Grass strip
     const grassH = height - grassY;
@@ -447,6 +469,11 @@ export default function Viz() {
     pathsLayerRef.current = pathsLayer;
 
     const getCentroid = (countryName: string): [number, number] | null => {
+      // Use manual override for multipolygon countries whose D3 centroid drifts off-landmass
+      if (CENTROID_OVERRIDE[countryName]) {
+        const pt = projection(CENTROID_OVERRIDE[countryName]);
+        return pt ?? null;
+      }
       const geoName = GEO_NAME_MAP[countryName] ?? countryName;
       const feature = worldData.features.find((f: any) => f.properties.name === geoName);
       if (!feature) return null;

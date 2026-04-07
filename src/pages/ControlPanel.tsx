@@ -17,59 +17,108 @@ const CONTINENT_HUES: Record<string, number> = {
 const CONTINENTS = {
   "Africa": [
     { name: "Algeria", flag: "🇩🇿" }, { name: "Angola", flag: "🇦🇴" },
-    { name: "Egypt", flag: "🇪🇬" }, { name: "Ethiopia", flag: "🇪🇹" },
-    { name: "Ghana", flag: "🇬🇭" }, { name: "Kenya", flag: "🇰🇪" },
-    { name: "Morocco", flag: "🇲🇦" }, { name: "Nigeria", flag: "🇳🇬" },
-    { name: "Senegal", flag: "🇸🇳" }, { name: "South Africa", flag: "🇿🇦" },
-    { name: "Sudan", flag: "🇸🇩" }, { name: "Tanzania", flag: "🇹🇿" },
+    { name: "Benin", flag: "🇧🇯" }, { name: "Botswana", flag: "🇧🇼" },
+    { name: "Burkina Faso", flag: "🇧🇫" }, { name: "Burundi", flag: "🇧🇮" },
+    { name: "Cameroon", flag: "🇨🇲" }, { name: "Cape Verde", flag: "🇨🇻" },
+    { name: "Central African Republic", flag: "🇨🇫" }, { name: "Chad", flag: "🇹🇩" },
+    { name: "Comoros", flag: "🇰🇲" }, { name: "DR Congo", flag: "🇨🇩" },
+    { name: "Republic of Congo", flag: "🇨🇬" }, { name: "Djibouti", flag: "🇩🇯" },
+    { name: "Egypt", flag: "🇪🇬" }, { name: "Equatorial Guinea", flag: "🇬🇶" },
+    { name: "Eritrea", flag: "🇪🇷" }, { name: "Eswatini", flag: "🇸🇿" },
+    { name: "Ethiopia", flag: "🇪🇹" }, { name: "Gabon", flag: "🇬🇦" },
+    { name: "Gambia", flag: "🇬🇲" }, { name: "Ghana", flag: "🇬🇭" },
+    { name: "Guinea", flag: "🇬🇳" }, { name: "Guinea-Bissau", flag: "🇬🇼" },
+    { name: "Ivory Coast", flag: "🇨🇮" }, { name: "Kenya", flag: "🇰🇪" },
+    { name: "Lesotho", flag: "🇱🇸" }, { name: "Liberia", flag: "🇱🇷" },
+    { name: "Libya", flag: "🇱🇾" }, { name: "Madagascar", flag: "🇲🇬" },
+    { name: "Malawi", flag: "🇲🇼" }, { name: "Mali", flag: "🇲🇱" },
+    { name: "Mauritania", flag: "🇲🇷" }, { name: "Mauritius", flag: "🇲🇺" },
+    { name: "Morocco", flag: "🇲🇦" }, { name: "Mozambique", flag: "🇲🇿" },
+    { name: "Namibia", flag: "🇳🇦" }, { name: "Niger", flag: "🇳🇪" },
+    { name: "Nigeria", flag: "🇳🇬" }, { name: "Rwanda", flag: "🇷🇼" },
+    { name: "Senegal", flag: "🇸🇳" }, { name: "Sierra Leone", flag: "🇸🇱" },
+    { name: "Somalia", flag: "🇸🇴" }, { name: "South Africa", flag: "🇿🇦" },
+    { name: "South Sudan", flag: "🇸🇸" }, { name: "Sudan", flag: "🇸🇩" },
+    { name: "Tanzania", flag: "🇹🇿" }, { name: "Togo", flag: "🇹🇬" },
     { name: "Tunisia", flag: "🇹🇳" }, { name: "Uganda", flag: "🇺🇬" },
-    { name: "Zimbabwe", flag: "🇿🇼" },
+    { name: "Zambia", flag: "🇿🇲" }, { name: "Zimbabwe", flag: "🇿🇼" },
   ],
   "Asia": [
-    { name: "Bangladesh", flag: "🇧🇩" }, { name: "China", flag: "🇨🇳" },
-    { name: "India", flag: "🇮🇳" }, { name: "Indonesia", flag: "🇮🇩" },
-    { name: "Iran", flag: "🇮🇷" }, { name: "Iraq", flag: "🇮🇶" },
-    { name: "Japan", flag: "🇯🇵" }, { name: "Jordan", flag: "🇯🇴" },
-    { name: "Lebanon", flag: "🇱🇧" }, { name: "Malaysia", flag: "🇲🇾" },
-    { name: "Pakistan", flag: "🇵🇰" }, { name: "Philippines", flag: "🇵🇭" },
-    { name: "Saudi Arabia", flag: "🇸🇦" }, { name: "South Korea", flag: "🇰🇷" },
-    { name: "Sri Lanka", flag: "🇱🇰" }, { name: "Syria", flag: "🇸🇾" },
-    { name: "Thailand", flag: "🇹🇭" }, { name: "Turkey", flag: "🇹🇷" },
-    { name: "UAE", flag: "🇦🇪" }, { name: "Vietnam", flag: "🇻🇳" },
+    { name: "Afghanistan", flag: "🇦🇫" }, { name: "Armenia", flag: "🇦🇲" },
+    { name: "Azerbaijan", flag: "🇦🇿" }, { name: "Bahrain", flag: "🇧🇭" },
+    { name: "Bangladesh", flag: "🇧🇩" }, { name: "Bhutan", flag: "🇧🇹" },
+    { name: "Brunei", flag: "🇧🇳" }, { name: "Cambodia", flag: "🇰🇭" },
+    { name: "China", flag: "🇨🇳" }, { name: "Cyprus", flag: "🇨🇾" },
+    { name: "Georgia", flag: "🇬🇪" }, { name: "India", flag: "🇮🇳" },
+    { name: "Indonesia", flag: "🇮🇩" }, { name: "Iran", flag: "🇮🇷" },
+    { name: "Iraq", flag: "🇮🇶" }, { name: "Japan", flag: "🇯🇵" },
+    { name: "Jordan", flag: "🇯🇴" }, { name: "Kazakhstan", flag: "🇰🇿" },
+    { name: "Kuwait", flag: "🇰🇼" }, { name: "Kyrgyzstan", flag: "🇰🇬" },
+    { name: "Laos", flag: "🇱🇦" }, { name: "Lebanon", flag: "🇱🇧" },
+    { name: "Malaysia", flag: "🇲🇾" }, { name: "Maldives", flag: "🇲🇻" },
+    { name: "Mongolia", flag: "🇲🇳" }, { name: "Myanmar", flag: "🇲🇲" },
+    { name: "Nepal", flag: "🇳🇵" }, { name: "North Korea", flag: "🇰🇵" },
+    { name: "Oman", flag: "🇴🇲" }, { name: "Pakistan", flag: "🇵🇰" },
+    { name: "Palestine", flag: "🇵🇸" },
+    { name: "Philippines", flag: "🇵🇭" }, { name: "Qatar", flag: "🇶🇦" },
+    { name: "Saudi Arabia", flag: "🇸🇦" }, { name: "Singapore", flag: "🇸🇬" },
+    { name: "South Korea", flag: "🇰🇷" }, { name: "Sri Lanka", flag: "🇱🇰" },
+    { name: "Syria", flag: "🇸🇾" }, { name: "Taiwan", flag: "🇹🇼" },
+    { name: "Tajikistan", flag: "🇹🇯" }, { name: "Thailand", flag: "🇹🇭" },
+    { name: "Timor-Leste", flag: "🇹🇱" }, { name: "Turkey", flag: "🇹🇷" },
+    { name: "Turkmenistan", flag: "🇹🇲" }, { name: "UAE", flag: "🇦🇪" },
+    { name: "Uzbekistan", flag: "🇺🇿" }, { name: "Vietnam", flag: "🇻🇳" },
+    { name: "Yemen", flag: "🇾🇪" },
   ],
   "Europe": [
-    { name: "Austria", flag: "🇦🇹" }, { name: "Belgium", flag: "🇧🇪" },
-    { name: "Denmark", flag: "🇩🇰" }, { name: "Finland", flag: "🇫🇮" },
-    { name: "France", flag: "🇫🇷" }, { name: "Germany", flag: "🇩🇪" },
-    { name: "Greece", flag: "🇬🇷" }, { name: "Hungary", flag: "🇭🇺" },
+    { name: "Albania", flag: "🇦🇱" }, { name: "Austria", flag: "🇦🇹" },
+    { name: "Belarus", flag: "🇧🇾" }, { name: "Belgium", flag: "🇧🇪" },
+    { name: "Bosnia and Herzegovina", flag: "🇧🇦" }, { name: "Bulgaria", flag: "🇧🇬" },
+    { name: "Croatia", flag: "🇭🇷" }, { name: "Czech Republic", flag: "🇨🇿" },
+    { name: "Denmark", flag: "🇩🇰" }, { name: "Estonia", flag: "🇪🇪" },
+    { name: "Finland", flag: "🇫🇮" }, { name: "France", flag: "🇫🇷" },
+    { name: "Germany", flag: "🇩🇪" }, { name: "Greece", flag: "🇬🇷" },
+    { name: "Hungary", flag: "🇭🇺" }, { name: "Iceland", flag: "🇮🇸" },
     { name: "Ireland", flag: "🇮🇪" }, { name: "Italy", flag: "🇮🇹" },
-    { name: "Netherlands", flag: "🇳🇱" }, { name: "Norway", flag: "🇳🇴" },
+    { name: "Kosovo", flag: "🇽🇰" }, { name: "Latvia", flag: "🇱🇻" },
+    { name: "Lithuania", flag: "🇱🇹" }, { name: "Luxembourg", flag: "🇱🇺" },
+    { name: "Malta", flag: "🇲🇹" }, { name: "Moldova", flag: "🇲🇩" },
+    { name: "Montenegro", flag: "🇲🇪" }, { name: "Netherlands", flag: "🇳🇱" },
+    { name: "North Macedonia", flag: "🇲🇰" }, { name: "Norway", flag: "🇳🇴" },
     { name: "Poland", flag: "🇵🇱" }, { name: "Portugal", flag: "🇵🇹" },
     { name: "Romania", flag: "🇷🇴" }, { name: "Russia", flag: "🇷🇺" },
-    { name: "Spain", flag: "🇪🇸" }, { name: "Sweden", flag: "🇸🇪" },
-    { name: "Switzerland", flag: "🇨🇭" }, { name: "UK", flag: "🇬🇧" },
-    { name: "Ukraine", flag: "🇺🇦" },
+    { name: "Serbia", flag: "🇷🇸" }, { name: "Slovakia", flag: "🇸🇰" },
+    { name: "Slovenia", flag: "🇸🇮" }, { name: "Spain", flag: "🇪🇸" },
+    { name: "Sweden", flag: "🇸🇪" }, { name: "Switzerland", flag: "🇨🇭" },
+    { name: "UK", flag: "🇬🇧" }, { name: "Ukraine", flag: "🇺🇦" },
   ],
   "North America": [
-    { name: "Canada", flag: "🇨🇦" }, { name: "Costa Rica", flag: "🇨🇷" },
-    { name: "Cuba", flag: "🇨🇺" }, { name: "El Salvador", flag: "🇸🇻" },
+    { name: "Bahamas", flag: "🇧🇸" }, { name: "Barbados", flag: "🇧🇧" },
+    { name: "Belize", flag: "🇧🇿" }, { name: "Canada", flag: "🇨🇦" },
+    { name: "Costa Rica", flag: "🇨🇷" }, { name: "Cuba", flag: "🇨🇺" },
+    { name: "Dominican Republic", flag: "🇩🇴" }, { name: "El Salvador", flag: "🇸🇻" },
     { name: "Guatemala", flag: "🇬🇹" }, { name: "Haiti", flag: "🇭🇹" },
     { name: "Honduras", flag: "🇭🇳" }, { name: "Jamaica", flag: "🇯🇲" },
-    { name: "Mexico", flag: "🇲🇽" }, { name: "Panama", flag: "🇵🇦" },
+    { name: "Mexico", flag: "🇲🇽" }, { name: "Nicaragua", flag: "🇳🇮" },
+    { name: "Panama", flag: "🇵🇦" }, { name: "Trinidad and Tobago", flag: "🇹🇹" },
     { name: "USA", flag: "🇺🇸" },
   ],
   "South America": [
     { name: "Argentina", flag: "🇦🇷" }, { name: "Bolivia", flag: "🇧🇴" },
     { name: "Brazil", flag: "🇧🇷" }, { name: "Chile", flag: "🇨🇱" },
     { name: "Colombia", flag: "🇨🇴" }, { name: "Ecuador", flag: "🇪🇨" },
-    { name: "Paraguay", flag: "🇵🇾" }, { name: "Peru", flag: "🇵🇪" },
+    { name: "Guyana", flag: "🇬🇾" }, { name: "Paraguay", flag: "🇵🇾" },
+    { name: "Peru", flag: "🇵🇪" }, { name: "Suriname", flag: "🇸🇷" },
     { name: "Uruguay", flag: "🇺🇾" }, { name: "Venezuela", flag: "🇻🇪" },
   ],
   "Oceania": [
     { name: "Australia", flag: "🇦🇺" }, { name: "Fiji", flag: "🇫🇯" },
-    { name: "New Zealand", flag: "🇳🇿" }, { name: "Papua New Guinea", flag: "🇵🇬" },
-    { name: "Samoa", flag: "🇼🇸" }, { name: "Solomon Islands", flag: "🇸🇧" },
-    { name: "Tonga", flag: "🇹🇴" }, { name: "Vanuatu", flag: "🇻🇺" },
+    { name: "Kiribati", flag: "🇰🇮" }, { name: "Marshall Islands", flag: "🇲🇭" },
+    { name: "Micronesia", flag: "🇫🇲" }, { name: "Nauru", flag: "🇳🇷" },
+    { name: "New Zealand", flag: "🇳🇿" }, { name: "Palau", flag: "🇵🇼" },
+    { name: "Papua New Guinea", flag: "🇵🇬" }, { name: "Samoa", flag: "🇼🇸" },
+    { name: "Solomon Islands", flag: "🇸🇧" }, { name: "Tonga", flag: "🇹🇴" },
+    { name: "Tuvalu", flag: "🇹🇻" }, { name: "Vanuatu", flag: "🇻🇺" },
   ],
 };
 
@@ -148,7 +197,7 @@ function normalizePath(strokes: { x: number; y: number }[][]): string {
   const maxY = Math.max(...allPoints.map(p => p.y));
   const w = maxX - minX || 1;
   const h = maxY - minY || 1;
-  const scale = 30 / Math.max(w, h);
+  const scale = 16 / Math.max(w, h);
   const cx = (minX + maxX) / 2;
   const cy = (minY + maxY) / 2;
   return strokes
@@ -160,7 +209,7 @@ function normalizePath(strokes: { x: number; y: number }[][]): string {
           const ny = ((p.y - cy) * scale).toFixed(2);
           return `${i === 0 ? 'M' : 'L'}${nx},${ny}`;
         })
-        .join(' ')
+        .join(' ') + ' Z'
     )
     .join(' ');
 }
@@ -487,25 +536,28 @@ export default function ControlPanel() {
               </p>
             </div>
 
-            {/* Canvas area */}
-            <div className="relative flex-1 mx-4 mb-2 rounded-3xl overflow-hidden border border-white/10 shadow-inner bg-[#1a1a1a]">
-              <canvas
-                ref={canvasRef}
-                className="absolute inset-0 w-full h-full"
-                style={{ touchAction: 'none' }}
-                onTouchStart={onDrawStart}
-                onTouchMove={onDrawMove}
-                onTouchEnd={onDrawEnd}
-                onMouseDown={onDrawStart}
-                onMouseMove={e => { if (e.buttons === 1) onDrawMove(e); }}
-                onMouseUp={onDrawEnd}
-              />
+            {/* Canvas area — square so the drawn shape has no aspect-ratio distortion */}
+            <div className="flex-1 flex items-center justify-center px-4 mb-2">
+              <div className="relative w-full aspect-square max-h-full rounded-3xl overflow-hidden border border-white/10 shadow-inner bg-[#1a1a1a]"
+                style={{ maxWidth: 'min(100%, calc(100dvh - 200px))' }}>
+                <canvas
+                  ref={canvasRef}
+                  className="absolute inset-0 w-full h-full"
+                  style={{ touchAction: 'none' }}
+                  onTouchStart={onDrawStart}
+                  onTouchMove={onDrawMove}
+                  onTouchEnd={onDrawEnd}
+                  onMouseDown={onDrawStart}
+                  onMouseMove={e => { if (e.buttons === 1) onDrawMove(e); }}
+                  onMouseUp={onDrawEnd}
+                />
 
-              {!hasStrokes && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <p className="text-white/20 text-xl select-none">Draw here…</p>
-                </div>
-              )}
+                {!hasStrokes && (
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <p className="text-white/20 text-xl select-none">Draw here…</p>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Actions */}
