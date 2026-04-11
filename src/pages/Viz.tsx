@@ -211,6 +211,19 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 export default function Viz() {
   const [statusText, setStatusText] = useState('WAITING FOR A NEW TRAVELLER...');
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
+
+  // AudioContext MUST be created inside a synchronous user-gesture handler.
+  // The operator taps the screen once at startup; after that sounds work for
+  // the entire session regardless of how animations are triggered.
+  const unlockAudio = () => {
+    if (audioUnlocked) return;
+    try {
+      if (!_vizCtx) _vizCtx = new AudioContext();
+      if (_vizCtx.state === 'suspended') _vizCtx.resume();
+      setAudioUnlocked(true);
+    } catch {}
+  };
   const svgRef = useRef<SVGSVGElement>(null);
   const getCentroidRef = useRef<((name: string) => [number, number] | null) | null>(null);
   const pathsLayerRef = useRef<d3.Selection<SVGGElement, unknown, null, undefined> | null>(null);
@@ -634,28 +647,16 @@ export default function Viz() {
       setStatusText(data.status);
     });
 
-    // Try to create AudioContext immediately (works in kiosk/Electron).
-    // Also unlock on first user interaction as a fallback for browser autoplay policy.
-    try { _vizCtx = new AudioContext(); } catch {}
-    const unlockAudio = () => {
-      if (!_vizCtx) { try { _vizCtx = new AudioContext(); } catch {} }
-      else if (_vizCtx.state === 'suspended') _vizCtx.resume();
-    };
-    document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('touchstart', unlockAudio, { once: true });
-
     return () => {
       observer.disconnect();
       socket.off('initial_state');
       socket.off('new_path_added');
       socket.off('status_update');
-      document.removeEventListener('click', unlockAudio);
-      document.removeEventListener('touchstart', unlockAudio);
     };
   }, []);
 
   return (
-    <div className="w-full h-screen overflow-hidden relative" style={{ background: '#060d12' }}>
+    <div className="w-full h-screen overflow-hidden relative" style={{ background: '#060d12' }} onClick={unlockAudio}>
 
       {/* Quote + status */}
       <div className="absolute top-8 left-0 right-0 text-center z-10 px-8 pointer-events-none">
@@ -715,6 +716,15 @@ export default function Viz() {
         className="absolute bottom-0 w-full h-16 pointer-events-none"
         style={{ background: 'linear-gradient(to top, #0d2009, transparent)' }}
       />
+
+      {/* One-time sound unlock hint for the operator */}
+      {!audioUnlocked && (
+        <div className="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none">
+          <span className="font-hand text-white/20 text-sm tracking-wide animate-pulse">
+            tap screen to enable sound
+          </span>
+        </div>
+      )}
     </div>
   );
 }
