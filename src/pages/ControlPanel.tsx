@@ -6,12 +6,12 @@ const socket = io();
 
 // Hue (degrees) that represents each continent on the colour wheel
 const CONTINENT_HUES: Record<string, number> = {
-  "Africa":        32,   // amber / warm orange
-  "Asia":           5,   // terracotta / red
-  "Europe":       218,   // cobalt blue
-  "North America":170,   // teal
-  "South America":138,   // emerald green
-  "Oceania":      278,   // violet / purple
+  "Africa":        32,
+  "Asia":           5,
+  "Europe":       218,
+  "North America":170,
+  "South America":138,
+  "Oceania":      278,
 };
 
 const CONTINENTS = {
@@ -122,13 +122,11 @@ const CONTINENTS = {
   ],
 };
 
-// Build a flat map: country name → continent
 const COUNTRY_CONTINENT: Record<string, string> = {};
 for (const [cont, list] of Object.entries(CONTINENTS)) {
   list.forEach(c => { COUNTRY_CONTINENT[c.name] = cont; });
 }
 
-/** Blend hues using circular (vector) mean so we stay vivid across any mix */
 function blendHues(hues: number[]): number {
   const rad = hues.map(h => (h * Math.PI) / 180);
   const sinMean = rad.reduce((s, r) => s + Math.sin(r), 0) / rad.length;
@@ -136,7 +134,6 @@ function blendHues(hues: number[]): number {
   return ((Math.atan2(sinMean, cosMean) * 180) / Math.PI + 360) % 360;
 }
 
-/** Compute a vivid blended hsl colour from the user's selected countries */
 function computeBlendedColor(countries: string[]): string {
   if (countries.length === 0) return 'hsl(138,70%,50%)';
   const hues = countries.map(c => CONTINENT_HUES[COUNTRY_CONTINENT[c]] ?? 0);
@@ -144,7 +141,6 @@ function computeBlendedColor(countries: string[]): string {
   return `hsl(${hue.toFixed(0)},78%,55%)`;
 }
 
-/** Per-country swatch colour: continent hue, lightness varies by position */
 function swatchColor(continent: string, index: number): string {
   const hue = CONTINENT_HUES[continent] ?? 0;
   const lightness = 38 + (index % 5) * 5;
@@ -152,29 +148,21 @@ function swatchColor(continent: string, index: number): string {
   return `hsl(${hue},${sat}%,${lightness}%)`;
 }
 
-/**
- * Stamp a cluster of leaf-shaped ellipses at (x, y).
- * Each leaflet radiates outward from the center, giving a natural leaf-cluster look.
- */
 function drawLeafStamp(
   ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  color: string,
-  size: number
+  x: number, y: number,
+  color: string, size: number
 ) {
-  const count = 7 + Math.floor(Math.random() * 5); // 7–11 leaflets
+  const count = 7 + Math.floor(Math.random() * 5);
   for (let i = 0; i < count; i++) {
-    // Evenly spread around center with some jitter
     const baseAngle = (i / count) * Math.PI * 2;
     const angle = baseAngle + (Math.random() - 0.5) * 1.1;
     const dist = size * (0.12 + Math.random() * 0.45);
     const lx = x + Math.cos(angle) * dist;
     const ly = y + Math.sin(angle) * dist;
-    // Leaflet points outward (rotate 90° from the radial direction so the long axis faces outward)
     const leafRot = angle + Math.PI / 2 + (Math.random() - 0.5) * 0.5;
-    const w = size * (0.05 + Math.random() * 0.07); // very narrow — leaf width
-    const h = size * (0.22 + Math.random() * 0.28); // elongated — leaf length
+    const w = size * (0.05 + Math.random() * 0.07);
+    const h = size * (0.22 + Math.random() * 0.28);
     ctx.save();
     ctx.translate(lx, ly);
     ctx.rotate(leafRot);
@@ -187,7 +175,6 @@ function drawLeafStamp(
   }
 }
 
-/** Normalize drawn strokes to an SVG path string centered at (0,0), max dimension ~30 units */
 function normalizePath(strokes: { x: number; y: number }[][]): string {
   const allPoints = strokes.flat();
   if (allPoints.length < 2) return '';
@@ -214,6 +201,144 @@ function normalizePath(strokes: { x: number; y: number }[][]): string {
     .join(' ');
 }
 
+// ---------------------------------------------------------------------------
+// Web Audio synthesis — no files needed, works offline
+// ---------------------------------------------------------------------------
+let _audioCtx: AudioContext | null = null;
+
+function getAudioCtx(): AudioContext | null {
+  try {
+    if (!_audioCtx) _audioCtx = new AudioContext();
+    if (_audioCtx.state === 'suspended') _audioCtx.resume();
+    return _audioCtx;
+  } catch { return null; }
+}
+
+/** Soft rising tones — played on Begin Journey */
+function playBegin(ctx: AudioContext) {
+  const t = ctx.currentTime;
+  [261.6, 329.6, 392].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(freq * 0.85, t + i * 0.1);
+    osc.frequency.linearRampToValueAtTime(freq, t + i * 0.1 + 0.3);
+    g.gain.setValueAtTime(0, t + i * 0.1);
+    g.gain.linearRampToValueAtTime(0.14, t + i * 0.1 + 0.07);
+    g.gain.exponentialRampToValueAtTime(0.001, t + i * 0.1 + 1.2);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t + i * 0.1); osc.stop(t + i * 0.1 + 1.2);
+  });
+}
+
+/** Marimba-like tap — pitch varies by continent hue */
+function playSelect(ctx: AudioContext, hue: number) {
+  const scale = [261.6, 293.7, 329.6, 349.2, 392, 440, 493.9, 523.2];
+  const freq = scale[Math.round((hue / 360) * (scale.length - 1))];
+  const t = ctx.currentTime;
+  [freq, freq * 2].forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = f;
+    const vol = i === 0 ? 0.2 : 0.07;
+    g.gain.setValueAtTime(vol, t);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 0.55);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t); osc.stop(t + 0.55);
+  });
+}
+
+/** Soft descending tone — played on country deselect */
+function playDeselect(ctx: AudioContext) {
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = 'sine';
+  osc.frequency.setValueAtTime(330, t);
+  osc.frequency.exponentialRampToValueAtTime(220, t + 0.18);
+  g.gain.setValueAtTime(0.1, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.22);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.22);
+}
+
+/** Organic leaf-rustle noise — played while drawing (throttled) */
+function playRustle(ctx: AudioContext) {
+  const dur = 0.07;
+  const buf = ctx.createBuffer(1, Math.round(ctx.sampleRate * dur), ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) {
+    d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 1.8);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = 'bandpass';
+  filt.frequency.value = 700 + Math.random() * 600;
+  filt.Q.value = 0.7;
+  const g = ctx.createGain();
+  g.gain.value = 0.13;
+  src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+  src.start();
+}
+
+/** Soft wind whoosh — played on step transitions */
+function playWhoosh(ctx: AudioContext) {
+  const dur = 0.45;
+  const buf = ctx.createBuffer(1, Math.round(ctx.sampleRate * dur), ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) {
+    const t = i / d.length;
+    d[i] = (Math.random() * 2 - 1) * Math.sin(t * Math.PI);
+  }
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = 'highpass';
+  filt.frequency.value = 300;
+  const g = ctx.createGain();
+  g.gain.value = 0.14;
+  src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+  src.start();
+}
+
+/** Warm chord bloom — played on leaf submission */
+function playSubmit(ctx: AudioContext) {
+  const t = ctx.currentTime;
+  [261.6, 329.6, 392, 523.2].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const delay = i * 0.07;
+    g.gain.setValueAtTime(0, t + delay);
+    g.gain.linearRampToValueAtTime(0.16, t + delay + 0.07);
+    g.gain.exponentialRampToValueAtTime(0.001, t + delay + 1.6);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t + delay); osc.stop(t + delay + 1.6);
+  });
+}
+
+/** Ascending chime — played on completion screen */
+function playComplete(ctx: AudioContext) {
+  const t = ctx.currentTime;
+  [261.6, 329.6, 392, 523.2, 659.3].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    const delay = i * 0.13;
+    g.gain.setValueAtTime(0, t + delay);
+    g.gain.linearRampToValueAtTime(0.18, t + delay + 0.06);
+    g.gain.exponentialRampToValueAtTime(0.001, t + delay + 1.8);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t + delay); osc.stop(t + delay + 1.8);
+  });
+}
+
+// ---------------------------------------------------------------------------
+
 export default function ControlPanel() {
   const [step, setStep] = useState(1);
   const [selectedCountries, setSelectedCountries] = useState<string[]>([]);
@@ -226,26 +351,30 @@ export default function ControlPanel() {
   const strokesRef = useRef<{ x: number; y: number }[][]>([]);
   const currentStrokeRef = useRef<{ x: number; y: number }[]>([]);
   const isDrawingRef = useRef(false);
-  // Tracks position of last leaf stamp so we space them evenly
   const lastStampPosRef = useRef<{ x: number; y: number } | null>(null);
-  // Always-fresh stroke colour for use inside useCallback
   const strokeColorRef = useRef('hsl(138,78%,55%)');
-  // Whether canvas pixel dimensions have been synced to CSS size
   const canvasSizedRef = useRef(false);
+  // Throttle rustle sound to ~90ms intervals
+  const lastRustleTimeRef = useRef(0);
 
-  // Keep stroke colour in sync with selection
   useEffect(() => {
     const color = computeBlendedColor(selectedCountries);
     strokeColorRef.current = color;
     setPreviewColor(color);
   }, [selectedCountries]);
 
-  // Reset canvas-sized flag when leaving the draw step
   useEffect(() => {
     if (step !== 4) canvasSizedRef.current = false;
   }, [step]);
 
-  /** Ensure canvas pixel dimensions match CSS layout (call before first draw of each session) */
+  // Play ascending chime when completion screen appears
+  useEffect(() => {
+    if (step === 5) {
+      const ctx = getAudioCtx();
+      if (ctx) playComplete(ctx);
+    }
+  }, [step]);
+
   const ensureCanvasSize = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas || canvasSizedRef.current) return;
@@ -257,7 +386,6 @@ export default function ControlPanel() {
     }
   }, []);
 
-  // Stamp a leaf cluster at (x, y) directly onto the main canvas, respecting minimum spacing
   const tryStamp = useCallback((x: number, y: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -269,9 +397,16 @@ export default function ControlPanel() {
     if (last && Math.hypot(x - last.x, y - last.y) < minDist) return;
     drawLeafStamp(ctx, x, y, strokeColorRef.current, size);
     lastStampPosRef.current = { x, y };
+
+    // Rustle sound throttled to ~90ms
+    const now = Date.now();
+    if (now - lastRustleTimeRef.current > 90) {
+      const actx = getAudioCtx();
+      if (actx) playRustle(actx);
+      lastRustleTimeRef.current = now;
+    }
   }, []);
 
-  // Direct drawing
   const getCanvasPt = (e: React.TouchEvent | React.MouseEvent) => {
     const canvas = canvasRef.current!;
     const rect = canvas.getBoundingClientRect();
@@ -292,6 +427,7 @@ export default function ControlPanel() {
     currentStrokeRef.current = [pt];
     isDrawingRef.current = true;
     lastStampPosRef.current = null;
+    lastRustleTimeRef.current = 0; // allow immediate sound on stroke start
     tryStamp(pt.x, pt.y);
   };
 
@@ -327,11 +463,12 @@ export default function ControlPanel() {
   const submitLeaf = () => {
     const leafPath = normalizePath(strokesRef.current);
     if (!leafPath) return;
-    // Capture canvas as image for the completion preview
     const snapshot = canvasRef.current?.toDataURL() ?? '';
     setCanvasSnapshot(snapshot);
     const color = strokeColorRef.current;
     const leafScale = parseFloat((0.8 + Math.random() * 0.55).toFixed(3));
+    const ctx = getAudioCtx();
+    if (ctx) playSubmit(ctx);
     socket.emit('submit_leaf', { id: sessionId, countries: selectedCountries, leafPath, color, leafScale });
     socket.emit('status_update', { status: 'YOU BELONG' });
     setStep(5);
@@ -340,8 +477,14 @@ export default function ControlPanel() {
   const toggleCountry = (country: string) => {
     if (selectedCountries.includes(country)) {
       setSelectedCountries(prev => prev.filter(c => c !== country));
+      const ctx = getAudioCtx();
+      if (ctx) playDeselect(ctx);
     } else if (selectedCountries.length < 6) {
       setSelectedCountries(prev => [...prev, country]);
+      const continent = COUNTRY_CONTINENT[country];
+      const hue = CONTINENT_HUES[continent] ?? 0;
+      const ctx = getAudioCtx();
+      if (ctx) playSelect(ctx, hue);
     }
   };
 
@@ -369,7 +512,6 @@ export default function ControlPanel() {
             exit={{ opacity: 0, y: -20 }}
             className="text-center max-w-sm px-8"
           >
-            {/* Decorative leaf cluster */}
             <div className="flex justify-center mb-6">
               <svg width="80" height="64" viewBox="0 0 80 64" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <ellipse cx="40" cy="18" rx="5.5" ry="15" fill="#7A4F2D" transform="rotate(-6 40 18)" opacity="0.65"/>
@@ -385,7 +527,6 @@ export default function ControlPanel() {
               The Belonging Tree
             </h1>
 
-            {/* Divider */}
             <div className="flex items-center gap-3 mb-5">
               <div className="flex-1 h-px bg-[#8B5E3C] opacity-20" />
               <div className="w-1.5 h-1.5 rounded-full bg-[#8B5E3C] opacity-35" />
@@ -398,6 +539,8 @@ export default function ControlPanel() {
 
             <button
               onClick={() => {
+                const ctx = getAudioCtx();
+                if (ctx) playBegin(ctx);
                 setStep(2);
                 socket.emit('status_update', { status: 'A NEW TRAVELLER HAS ARRIVED' });
               }}
@@ -424,14 +567,12 @@ export default function ControlPanel() {
               </p>
             </div>
 
-            {/* Scrollable palette */}
             <div className="flex-1 overflow-y-auto px-4 pb-2">
               {(Object.entries(CONTINENTS) as [string, { name: string; flag: string }[]][]).map(
                 ([continent, countries]) => {
                   const hue = CONTINENT_HUES[continent];
                   return (
                     <div key={continent} className="mb-6">
-                      {/* Continent header */}
                       <div className="flex items-center gap-2 mb-3">
                         <div
                           className="w-2.5 h-2.5 rounded-full flex-shrink-0"
@@ -449,7 +590,6 @@ export default function ControlPanel() {
                         />
                       </div>
 
-                      {/* Country swatches */}
                       <div className="flex flex-wrap gap-3">
                         {countries.map(({ name, flag }, idx) => {
                           const sel = selectedCountries.includes(name);
@@ -499,7 +639,6 @@ export default function ControlPanel() {
               )}
             </div>
 
-            {/* Footer: blended colour preview + proceed */}
             <div className="flex-shrink-0 px-4 pb-6 pt-3 bg-[#0e0a07]">
               <div className="mb-4">
                 <div
@@ -517,7 +656,11 @@ export default function ControlPanel() {
               </div>
 
               <button
-                onClick={() => setStep(4)}
+                onClick={() => {
+                  const ctx = getAudioCtx();
+                  if (ctx) playWhoosh(ctx);
+                  setStep(4);
+                }}
                 disabled={selectedCountries.length < 1}
                 className={`w-full py-4 rounded-full font-hand font-semibold text-lg transition-all shadow-lg ${
                   selectedCountries.length >= 1
@@ -552,7 +695,6 @@ export default function ControlPanel() {
               </p>
             </div>
 
-            {/* Canvas area — square so the drawn shape has no aspect-ratio distortion */}
             <div className="flex-1 flex items-center justify-center px-4 mb-2">
               <div
                 className="relative w-full aspect-square max-h-full rounded-3xl overflow-hidden shadow-inner"
@@ -582,7 +724,6 @@ export default function ControlPanel() {
               </div>
             </div>
 
-            {/* Actions */}
             <div className="p-4 flex gap-3 flex-shrink-0">
               <button
                 onClick={clearDrawing}

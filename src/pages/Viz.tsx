@@ -54,6 +54,95 @@ const GEO_NAME_MAP: Record<string, string> = {
   "Dominican Republic":        "Dominican Republic",
 };
 
+// ---------------------------------------------------------------------------
+// Web Audio synthesis for the visualization screen
+// ---------------------------------------------------------------------------
+let _vizCtx: AudioContext | null = null;
+
+function getVizAudioCtx(): AudioContext | null {
+  try {
+    if (!_vizCtx) _vizCtx = new AudioContext();
+    if (_vizCtx.state === 'suspended') _vizCtx.resume();
+    return _vizCtx;
+  } catch { return null; }
+}
+
+/** Tiny pitched click — played per leaf as it appears (throttled in caller) */
+function playLeafLand(ctx: AudioContext) {
+  const t = ctx.currentTime;
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = 'sine';
+  const pitch = 700 + Math.random() * 500;
+  osc.frequency.setValueAtTime(pitch, t);
+  osc.frequency.exponentialRampToValueAtTime(pitch * 0.55, t + 0.05);
+  g.gain.setValueAtTime(0.07, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + 0.06);
+  osc.connect(g); g.connect(ctx.destination);
+  osc.start(t); osc.stop(t + 0.06);
+}
+
+/** Ascending filtered-noise sweep — played when zooming in */
+function playZoomIn(ctx: AudioContext) {
+  const dur = 1.3;
+  const t = ctx.currentTime;
+  const buf = ctx.createBuffer(1, Math.round(ctx.sampleRate * dur), ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = 'bandpass';
+  filt.frequency.setValueAtTime(150, t);
+  filt.frequency.exponentialRampToValueAtTime(1100, t + dur);
+  filt.Q.value = 3;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0, t);
+  g.gain.linearRampToValueAtTime(0.09, t + 0.25);
+  g.gain.linearRampToValueAtTime(0.04, t + dur);
+  src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+  src.start(t);
+}
+
+/** Descending filtered-noise sweep — played when zooming out */
+function playZoomOut(ctx: AudioContext) {
+  const dur = 1.3;
+  const t = ctx.currentTime;
+  const buf = ctx.createBuffer(1, Math.round(ctx.sampleRate * dur), ctx.sampleRate);
+  const d = buf.getChannelData(0);
+  for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filt = ctx.createBiquadFilter();
+  filt.type = 'bandpass';
+  filt.frequency.setValueAtTime(1100, t);
+  filt.frequency.exponentialRampToValueAtTime(150, t + dur);
+  filt.Q.value = 3;
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(0.09, t);
+  g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+  src.connect(filt); filt.connect(g); g.connect(ctx.destination);
+  src.start(t);
+}
+
+/** Soft resonant chord — played once path drawing finishes */
+function playPathDone(ctx: AudioContext) {
+  const t = ctx.currentTime;
+  [220, 277.2, 330].forEach((freq, i) => {
+    const osc = ctx.createOscillator();
+    const g = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = freq;
+    g.gain.setValueAtTime(0, t + i * 0.12);
+    g.gain.linearRampToValueAtTime(0.07, t + i * 0.12 + 0.25);
+    g.gain.linearRampToValueAtTime(0.05, t + 1.5);
+    g.gain.exponentialRampToValueAtTime(0.001, t + 3.2);
+    osc.connect(g); g.connect(ctx.destination);
+    osc.start(t + i * 0.12); osc.stop(t + 3.2);
+  });
+}
+// ---------------------------------------------------------------------------
+
 type PathEntry = {
   id: string;
   countries: string[];
@@ -241,6 +330,8 @@ export default function Viz() {
       svgSel.select('.tree-trunk').attr('filter', null);
 
       // 1 — Zoom in to the bounding box of all selected countries
+      const actx = getVizAudioCtx();
+      if (actx) playZoomIn(actx);
       await zoomToBBox(zoomContainer, points, W, H);
 
       const group = pathsLayer.append('g').attr('data-path-id', p.id);
@@ -271,6 +362,8 @@ export default function Viz() {
           const numLeaves = Math.max(1, Math.floor(totalLength / leafSpacing));
           // Total draw time ~1.8s regardless of path length
           const delay = Math.max(10, Math.min(60, 1800 / numLeaves));
+          // Play a leaf-land sound every N leaves so it doesn't overwhelm
+          const soundEvery = Math.max(1, Math.round(numLeaves / 12));
 
           for (let i = 0; i <= numLeaves; i++) {
             const pt = tempPath.getPointAtLength((i / numLeaves) * totalLength);
@@ -284,10 +377,14 @@ export default function Viz() {
               .transition()
               .duration(250)
               .style('opacity', BASE_OPACITY);
+            if (actx && i % soundEvery === 0) playLeafLand(actx);
             await sleep(delay);
           }
         }
       }
+
+      // Path drawing done — play resonant chord
+      if (actx) playPathDone(actx);
 
       // 3 — Glow pulse + country name label at each country point
       p.countries.forEach((name, idx) => {
@@ -330,6 +427,7 @@ export default function Viz() {
       await sleep(650);
 
       // 6 — Zoom back out
+      if (actx) playZoomOut(actx);
       await zoomOut(zoomContainer);
 
       svgSel.select('.tree-trunk').attr('filter', 'url(#watercolor)');
@@ -536,11 +634,23 @@ export default function Viz() {
       setStatusText(data.status);
     });
 
+    // Try to create AudioContext immediately (works in kiosk/Electron).
+    // Also unlock on first user interaction as a fallback for browser autoplay policy.
+    try { _vizCtx = new AudioContext(); } catch {}
+    const unlockAudio = () => {
+      if (!_vizCtx) { try { _vizCtx = new AudioContext(); } catch {} }
+      else if (_vizCtx.state === 'suspended') _vizCtx.resume();
+    };
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('touchstart', unlockAudio, { once: true });
+
     return () => {
       observer.disconnect();
       socket.off('initial_state');
       socket.off('new_path_added');
       socket.off('status_update');
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
     };
   }, []);
 
