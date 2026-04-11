@@ -357,7 +357,7 @@ export default function ControlPanel() {
   };
 
   return (
-    <div className="min-h-screen bg-[#F5F2ED] text-[#1A1A1A] font-sans flex flex-col items-center justify-center overflow-hidden">
+    <div className="min-h-screen bg-[#F7F3EC] text-[#2C1A0E] font-sans flex flex-col items-center justify-center overflow-hidden">
       <AnimatePresence mode="wait">
 
         {/* STEP 1: Welcome */}
@@ -367,36 +367,59 @@ export default function ControlPanel() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="text-center max-w-sm px-6"
+            className="text-center max-w-sm px-8"
           >
-            <h1 className="text-5xl font-serif mb-6 font-light tracking-tight">The Belonging Tree</h1>
-            <p className="text-lg mb-12 text-gray-600 leading-relaxed">
+            {/* Decorative leaf cluster */}
+            <div className="flex justify-center mb-6">
+              <svg width="80" height="64" viewBox="0 0 80 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <ellipse cx="40" cy="18" rx="5.5" ry="15" fill="#7A4F2D" transform="rotate(-6 40 18)" opacity="0.65"/>
+                <ellipse cx="24" cy="26" rx="4.5" ry="12" fill="#A87048" transform="rotate(-38 24 26)" opacity="0.55"/>
+                <ellipse cx="56" cy="24" rx="4.5" ry="12" fill="#7A4F2D" transform="rotate(32 56 24)" opacity="0.55"/>
+                <ellipse cx="13" cy="34" rx="3.5" ry="9" fill="#C09060" transform="rotate(-55 13 34)" opacity="0.4"/>
+                <ellipse cx="67" cy="32" rx="3.5" ry="9" fill="#8B5E3C" transform="rotate(50 67 32)" opacity="0.4"/>
+                <path d="M40 33 C40 40 39 50 38.5 56" stroke="#7A4F2D" strokeWidth="1.8" strokeLinecap="round" opacity="0.45"/>
+              </svg>
+            </div>
+
+            <h1 className="text-5xl font-serif mb-4 leading-tight text-[#2C1A0E]">
+              The Belonging Tree
+            </h1>
+
+            {/* Divider */}
+            <div className="flex items-center gap-3 mb-5">
+              <div className="flex-1 h-px bg-[#8B5E3C] opacity-20" />
+              <div className="w-1.5 h-1.5 rounded-full bg-[#8B5E3C] opacity-35" />
+              <div className="flex-1 h-px bg-[#8B5E3C] opacity-20" />
+            </div>
+
+            <p className="font-hand text-xl mb-10 text-[#7A5030] leading-relaxed">
               Your actions directly impact the belonging tree visualization. By the end of this journey, you will make your own contribution to it.
             </p>
+
             <button
               onClick={() => {
                 setStep(2);
                 socket.emit('status_update', { status: 'A NEW TRAVELLER HAS ARRIVED' });
               }}
-              className="bg-[#5A5A40] text-white w-full py-5 rounded-full text-xl font-medium hover:bg-[#4a4a35] transition-colors shadow-lg"
+              className="bg-[#7A4F2D] text-[#F7F3EC] w-full py-5 rounded-full font-hand font-semibold text-xl hover:bg-[#6A3F20] transition-colors shadow-lg"
             >
-              Begin Journey
+              Begin your journey →
             </button>
           </motion.div>
         )}
 
-        {/* STEP 2: Country Selection — palette UI */}
+        {/* STEP 2: Country Selection */}
         {step === 2 && (
           <motion.div
             key="s2"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full max-w-md flex flex-col h-[100dvh] bg-[#111]"
+            className="w-full max-w-md flex flex-col h-[100dvh] bg-[#0e0a07]"
           >
             <div className="p-6 pb-3 text-center flex-shrink-0">
-              <h2 className="text-3xl font-serif mb-1 text-white">Pick your colours</h2>
-              <p className="text-gray-400 text-sm">
+              <h2 className="text-3xl font-serif mb-1 text-[#F0E0C8]">Pick your colours</h2>
+              <p className="font-hand text-[#9A7858] text-base">
                 Each country is a colour. Choose up to 6. ({selectedCountries.length}/6)
               </p>
             </div>
@@ -411,12 +434,12 @@ export default function ControlPanel() {
                       {/* Continent header */}
                       <div className="flex items-center gap-2 mb-3">
                         <div
-                          className="w-3 h-3 rounded-full flex-shrink-0"
+                          className="w-2.5 h-2.5 rounded-full flex-shrink-0"
                           style={{ background: `hsl(${hue},70%,55%)` }}
                         />
                         <span
-                          className="text-xs font-semibold tracking-widest uppercase"
-                          style={{ color: `hsl(${hue},65%,65%)` }}
+                          className="font-hand text-sm font-bold tracking-wider uppercase"
+                          style={{ color: `hsl(${hue},60%,70%)` }}
                         >
                           {continent}
                         </span>
@@ -446,7 +469,7 @@ export default function ControlPanel() {
                                 style={{
                                   background: bg,
                                   boxShadow: sel
-                                    ? `0 0 0 3px #111, 0 0 0 5px ${bg}, 0 4px 16px ${bg}88`
+                                    ? `0 0 0 3px #0e0a07, 0 0 0 5px ${bg}, 0 4px 16px ${bg}88`
                                     : '0 2px 6px rgba(0,0,0,0.4)',
                                   transform: sel ? 'scale(1.12)' : 'scale(1)',
                                 }}
@@ -457,13 +480,13 @@ export default function ControlPanel() {
                                     initial={{ scale: 0 }}
                                     animate={{ scale: 1 }}
                                     className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
-                                    style={{ background: bg, border: '2px solid #111' }}
+                                    style={{ background: bg, border: '2px solid #0e0a07' }}
                                   >
                                     {selectedCountries.indexOf(name) + 1}
                                   </motion.div>
                                 )}
                               </div>
-                              <span className="text-[10px] text-gray-400 text-center w-14 leading-tight truncate">
+                              <span className="font-hand text-[11px] text-[#9A7858] text-center w-14 leading-tight truncate">
                                 {name}
                               </span>
                             </motion.button>
@@ -477,23 +500,16 @@ export default function ControlPanel() {
             </div>
 
             {/* Footer: blended colour preview + proceed */}
-            <div className="flex-shrink-0 px-4 pb-6 pt-3 bg-[#111]">
-              {/* Blended colour bar */}
+            <div className="flex-shrink-0 px-4 pb-6 pt-3 bg-[#0e0a07]">
               <div className="mb-4">
                 <div
                   className="h-10 rounded-full transition-all duration-500 shadow-lg"
                   style={{
-                    background:
-                      selectedCountries.length === 0
-                        ? '#2a2a2a'
-                        : previewColor,
-                    boxShadow:
-                      selectedCountries.length > 0
-                        ? `0 4px 20px ${previewColor}66`
-                        : 'none',
+                    background: selectedCountries.length === 0 ? '#2a1a0e' : previewColor,
+                    boxShadow: selectedCountries.length > 0 ? `0 4px 20px ${previewColor}66` : 'none',
                   }}
                 />
-                <p className="text-center text-gray-500 text-xs mt-2">
+                <p className="font-hand text-center text-[#7A5C40] text-sm mt-2">
                   {selectedCountries.length === 0
                     ? 'Your colour will appear here'
                     : 'Your unique colour'}
@@ -503,10 +519,10 @@ export default function ControlPanel() {
               <button
                 onClick={() => setStep(4)}
                 disabled={selectedCountries.length < 1}
-                className={`w-full py-4 rounded-full font-medium transition-all shadow-lg ${
+                className={`w-full py-4 rounded-full font-hand font-semibold text-lg transition-all shadow-lg ${
                   selectedCountries.length >= 1
                     ? 'text-white'
-                    : 'bg-gray-800 text-gray-600 cursor-not-allowed'
+                    : 'bg-[#1e1208] text-[#5A4030] cursor-not-allowed'
                 }`}
                 style={
                   selectedCountries.length >= 1
@@ -527,19 +543,25 @@ export default function ControlPanel() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full h-[100dvh] flex flex-col bg-[#111]"
+            className="w-full h-[100dvh] flex flex-col bg-[#0e0a07]"
           >
             <div className="p-5 pb-2 text-center flex-shrink-0">
-              <h2 className="text-2xl font-serif mb-1 text-white">Draw your leaf</h2>
-              <p className="text-sm" style={{ color: previewColor }}>
-                Draw any shape with your finger
+              <h2 className="text-2xl font-serif mb-1 text-[#F0E0C8]">Draw your leaf</h2>
+              <p className="font-hand text-base" style={{ color: previewColor }}>
+                Trace any shape with your finger
               </p>
             </div>
 
             {/* Canvas area — square so the drawn shape has no aspect-ratio distortion */}
             <div className="flex-1 flex items-center justify-center px-4 mb-2">
-              <div className="relative w-full aspect-square max-h-full rounded-3xl overflow-hidden border border-white/10 shadow-inner bg-[#1a1a1a]"
-                style={{ maxWidth: 'min(100%, calc(100dvh - 200px))' }}>
+              <div
+                className="relative w-full aspect-square max-h-full rounded-3xl overflow-hidden shadow-inner"
+                style={{
+                  maxWidth: 'min(100%, calc(100dvh - 200px))',
+                  background: '#140e08',
+                  border: '1px solid rgba(160,100,60,0.18)',
+                }}
+              >
                 <canvas
                   ref={canvasRef}
                   className="absolute inset-0 w-full h-full"
@@ -554,7 +576,7 @@ export default function ControlPanel() {
 
                 {!hasStrokes && (
                   <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                    <p className="text-white/20 text-xl select-none">Draw here…</p>
+                    <p className="font-hand text-2xl text-[#5A3A18]/35 select-none">Draw here…</p>
                   </div>
                 )}
               </div>
@@ -564,18 +586,19 @@ export default function ControlPanel() {
             <div className="p-4 flex gap-3 flex-shrink-0">
               <button
                 onClick={clearDrawing}
-                className="flex-1 py-4 rounded-full border border-white/20 text-gray-400 font-medium hover:bg-white/5 transition-colors"
+                className="flex-1 py-4 rounded-full font-hand font-semibold text-base text-[#9A7858] hover:bg-white/5 transition-colors"
+                style={{ border: '1px solid rgba(160,100,60,0.22)' }}
               >
                 Clear
               </button>
               <button
                 onClick={submitLeaf}
                 disabled={!hasStrokes}
-                className="flex-[2] py-4 rounded-full font-medium transition-all shadow-lg text-white"
+                className="flex-[2] py-4 rounded-full font-hand font-semibold text-lg transition-all shadow-lg text-white"
                 style={
                   hasStrokes
                     ? { background: previewColor, boxShadow: `0 4px 20px ${previewColor}66` }
-                    : { background: '#333', color: '#666', cursor: 'not-allowed' }
+                    : { background: '#1e1208', color: '#5A4030', cursor: 'not-allowed' }
                 }
               >
                 Submit leaf →
@@ -596,7 +619,7 @@ export default function ControlPanel() {
               <div
                 className="w-48 h-48 mb-8 rounded-3xl overflow-hidden shadow-2xl"
                 style={{
-                  background: '#1a1a1a',
+                  background: '#140e08',
                   boxShadow: `0 0 40px ${previewColor}55`,
                 }}
               >
@@ -604,14 +627,16 @@ export default function ControlPanel() {
               </div>
             )}
 
-            <h2 className="text-4xl font-serif mb-4 text-[#5A5A40]">
+            <h2 className="text-4xl font-serif mb-3 text-[#5A3820] leading-snug">
               You've left your mark<br />on The Belonging Tree.
             </h2>
-            <p className="text-gray-500 italic mb-12">And it'll always belong here.</p>
+            <p className="font-hand text-xl text-[#8B6040] italic mb-12">
+              And it'll always belong here.
+            </p>
 
             <button
               onClick={reset}
-              className="bg-[#5A5A40] text-white px-8 py-4 rounded-full font-medium hover:bg-[#4a4a35] transition-colors shadow-lg w-full"
+              className="bg-[#7A4F2D] text-[#F7F3EC] px-8 py-4 rounded-full font-hand font-semibold text-lg hover:bg-[#6A3F20] transition-colors shadow-lg w-full"
             >
               Start New Journey
             </button>

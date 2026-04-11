@@ -308,7 +308,7 @@ export default function Viz() {
           .attr('x', pt[0])
           .attr('y', pt[1] - 18 * leafScale)
           .attr('text-anchor', 'middle')
-          .attr('font-family', 'Georgia, serif')
+          .attr('font-family', 'Fraunces, Georgia, serif')
           .attr('font-size', `${Math.round(11 * leafScale)}px`)
           .attr('fill', color)
           .attr('filter', 'url(#label-shadow)')
@@ -553,7 +553,7 @@ export default function Viz() {
           "Our routes become our roots, wherever our lives may lead us to be.<br />
           Across continents and generations, part of one belonging tree."
         </h1>
-        <p className="text-base text-white/60 animate-pulse uppercase tracking-widest drop-shadow-md mt-6">
+        <p className="font-hand text-lg text-white/60 animate-pulse uppercase tracking-widest drop-shadow-md mt-6">
           {statusText}
         </p>
       </div>
