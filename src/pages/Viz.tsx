@@ -349,11 +349,8 @@ export default function Viz() {
     const height = svgEl.clientHeight;
     if (width === 0 || height === 0) return;
 
-    // Clear everything D3 manages
+    // Clear everything D3 manages (.zoom-root removal takes stump/grass/paths with it)
     svg.selectAll('.map-bg').remove();
-    svg.selectAll('.tree-stump').remove();
-    svg.selectAll('.grass-strip').remove();
-    svg.selectAll('.grass-edge').remove();
     svg.select(`#sky-gradient`).remove();
     svg.select(`#grass-gradient`).remove();
     svg.select('.zoom-root').remove();
@@ -410,16 +407,14 @@ export default function Viz() {
       .attr('stroke-width', 0.7)
       .style('opacity', 1);
 
-    // Tree stump + grass — drawn outside the zoomContainer so they don't scale/shift
+    // Tree stump + grass — inside zoomContainer so they scale with the zoom
     const cx = width / 2;
-    const grassY = height * 0.82;      // grass line sits at 82% down
-    const stumpW = 70;                  // half-width of stump at base
-    const stumpNarrow = 22;             // half-width at top
-    const stumpTop = height * 0.74;    // stump top connects just below map
+    const grassY = height * 0.82;
+    const stumpW = 70;
+    const stumpNarrow = 22;
+    const stumpTop = height * 0.74;
 
-    // Stump — tapers from narrow top to wider base
-    svg.selectAll('.tree-stump').remove();
-    svg.append('path')
+    zoomContainer.append('path')
       .attr('class', 'tree-stump')
       .attr('filter', 'url(#watercolor)')
       .attr('d', `
@@ -433,7 +428,6 @@ export default function Viz() {
 
     // Grass strip
     const grassH = height - grassY;
-    svg.selectAll('.grass-strip').remove();
     const grassGradId = 'grass-gradient';
     svg.select(`#${grassGradId}`).remove();
     const grassGrad = defs.append('linearGradient')
@@ -442,14 +436,13 @@ export default function Viz() {
     grassGrad.append('stop').attr('offset', '0%').attr('stop-color', '#1a3d12');
     grassGrad.append('stop').attr('offset', '100%').attr('stop-color', '#0d2009');
 
-    svg.append('rect')
+    zoomContainer.append('rect')
       .attr('class', 'grass-strip')
       .attr('x', 0).attr('y', grassY)
       .attr('width', width).attr('height', grassH + 2)
       .attr('fill', `url(#${grassGradId})`);
 
     // Organic wavy grass top edge
-    svg.selectAll('.grass-edge').remove();
     const wavePoints: string[] = [];
     const waveSegs = 18;
     for (let i = 0; i <= waveSegs; i++) {
@@ -458,7 +451,7 @@ export default function Viz() {
       wavePoints.push(`${i === 0 ? 'M' : 'L'}${wx},${wy}`);
     }
     wavePoints.push(`L${width},${height} L0,${height} Z`);
-    svg.append('path')
+    zoomContainer.append('path')
       .attr('class', 'grass-edge')
       .attr('d', wavePoints.join(' '))
       .attr('fill', '#1a3d12')
